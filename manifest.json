@@ -1,0 +1,33 @@
+{
+  "manifest_version": 2,
+
+  "name": "UCSC Selector",
+  "description": "UCSC Selector",
+  "version": "1.0",
+
+  "browser_action": {
+    "default_icon": "logo.png",
+    "default_popup": "build/index.html"
+  },
+
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://ucscbrowser.genap.ca/cgi-bin/*"],
+      "js": ["content.js"]
+    }
+  ],
+
+  "web_accessible_resources": [
+    "*"
+  ]
+}

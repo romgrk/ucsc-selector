@@ -1,0 +1,15 @@
+
+.App {
+  width: 200px;
+}
+.App-header {
+  padding: 10px;
+  color: #fff;
+  background-color: #222;
+}
+.App-controls {
+}
+.App-regions {
+  list-style: none;
+  padding: 0 1em;
+}
