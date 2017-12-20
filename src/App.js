@@ -74,6 +74,19 @@ class App extends Component {
             }
           </span>
 
+          {
+            background.getModes().map(mode =>
+              <button onClick={() => background.setMode(mode)}
+                style={{
+                  color: mode !== this.state.mode ? background.getModeColor(mode) : undefined,
+                  border: mode !== this.state.mode ? `2px solid ${background.getModeColor(mode)}` : undefined,
+                  backgroundColor: mode === this.state.mode ? background.getModeColor(mode) : 'black',
+                }}>
+                { mode }
+              </button>
+            )
+          }
+
         </header>
 
         <div className='row'>
@@ -94,6 +107,9 @@ class App extends Component {
                     const position = parsePosition(r.position)
                     return (
                       <tr>
+                        <td>
+                          <span className='badge' style={{ backgroundColor: background.getModeColor(r.mode) }} />
+                        </td>
                         <td>
                           { position.chrom }
                         </td>

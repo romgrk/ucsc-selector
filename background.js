@@ -2,6 +2,8 @@
  * background.js
  */
 
+const MODES = ['peak', 'start', 'end']
+
 let ports = []
 
 let state = {}
@@ -10,6 +12,7 @@ let listeners = []
 chrome.storage.local.get(null, (storage) => {
   state.regions = storage.regions || []
   state.status  = storage.status || 'start'
+  state.mode  = storage.mode || 'peak'
 })
 
 
@@ -20,15 +23,19 @@ chrome.runtime.onConnect.addListener((port) => {
   updateIcon()
 
   port.onMessage.addListener((msg) => {
-    addRegion(msg.data)
+    switch(msg.type) {
+      case 'region': return addRegion(msg.data)
+      case 'state': return port.postMessage(state)
+    }
   })
 
   port.onDisconnect.addListener(() => {
     ports = ports.filter(p => p !== port)
   })
 
-  port.postMessage({ type: 'regions', data: state.regions })
+  port.postMessage({ type: 'state', data: state })
 })
+
 function postMessage(message) {
   ports.forEach(p =>
     p.postMessage(message)
@@ -40,8 +47,17 @@ function updateIcon() {
       path: { '32': state.status === 'start' ? './logo-green.png' : './logo.png' },
       tabId: p.sender.tab.id,
     })
+    chrome.browserAction.setBadgeText({
+      text: 'ON',
+      tabId: p.sender.tab.id,
+    })
+    chrome.browserAction.setBadgeBackgroundColor({
+      color: getModeColor(state.mode),
+      tabId: p.sender.tab.id,
+    })
   })
 }
+
 
 function setState(patch) {
   state = { ...state, ...patch }
@@ -73,6 +89,18 @@ function toggleStatus(status) {
   setStatus(state.status === 'start' ? 'pause' : 'start')
 }
 
+function getMode() {
+  return state.mode
+}
+function setMode(mode) {
+  if (!MODES.includes(mode))
+    throw new Error('Invalid mode: ' + mode)
+
+  setState({ mode })
+  postMessage({ type: 'mode', data: mode })
+  updateIcon()
+}
+
 function getRegions() {
   return state.regions
 }
@@ -87,4 +115,16 @@ function deleteRegion(region) {
 function clearRegions() {
   setState({ regions: [] })
   postMessage({ type: 'regions', data: state.regions })
+}
+
+
+function getModes() {
+  return MODES
+}
+function getModeColor(mode) {
+  return {
+    peak:  '#ffff9e',
+    start: '#69b5ff',
+    end:   '#ff9e99',
+  }[mode]
 }
