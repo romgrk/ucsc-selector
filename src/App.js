@@ -2,6 +2,7 @@
 
 import React, { Component } from 'react'
 import './App.css'
+import { groupBy, prop } from 'ramda'
 
 import copyToClipboard from './utils/copy-to-clipboard'
 import parsePosition from './utils/parse-position'
@@ -9,8 +10,8 @@ import sortRegions from './utils/sort-regions'
 
 
 const background = window.background = chrome.extension.getBackgroundPage()
-console.log(background)
 
+const groupByTrack = groupBy(prop('track'))
 
 class App extends Component {
   constructor(props) {
@@ -38,7 +39,7 @@ class App extends Component {
   }
 
   copyRegionsToClipboard = () => {
-    copyToClipboard(this.state.regions.join('\n'))
+    copyToClipboard(JSON.stringify(this.state.regions, null, 2))
   }
 
   deleteAllRegions = () => {
@@ -84,31 +85,37 @@ class App extends Component {
           <table className="App-regions-table">
             <tbody>
               {
-                sortRegions(regions).map(region => {
-                  const position = parsePosition(region)
-                  return (
+                Object.entries(groupByTrack(regions)).map(([track, regions]) =>
+                  [
                     <tr>
-                      <td>
-                        { position.chrom }
-                      </td>
-                      <td>
-                        :
-                      </td>
-                      <td>
-                        { position.start }
-                      </td>
-                      <td>
-                        -
-                      </td>
-                      <td>
-                        { position.end }
-                      </td>
-                      <td>
-                        <button onClick={() => background.deleteRegion(region)}>&times;</button>
-                      </td>
+                      <th colSpan='6'>{ track }</th>
                     </tr>
-                  )
-                })
+                  ].concat(sortRegions(regions).map(r => {
+                    const position = parsePosition(r.position)
+                    return (
+                      <tr>
+                        <td>
+                          { position.chrom }
+                        </td>
+                        <td>
+                          :
+                        </td>
+                        <td>
+                          { position.start }
+                        </td>
+                        <td>
+                          -
+                        </td>
+                        <td>
+                          { position.end }
+                        </td>
+                        <td>
+                          <button onClick={() => background.deleteRegion(r)}>&times;</button>
+                        </td>
+                      </tr>
+                    )
+                  }))
+                )
               }
               {
                 regions.length === 0 &&

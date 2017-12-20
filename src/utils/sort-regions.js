@@ -6,8 +6,8 @@ import parsePosition from './parse-position.js'
 
 export default function sortRegions(regions) {
   return regions.sort((a, b) => {
-    const pa = parsePosition(a)
-    const pb = parsePosition(b)
+    const pa = parsePosition(a.position)
+    const pb = parsePosition(b.position)
 
     const ca = parseInt(pa.chrom.replace(/\D/g, ''))
     const cb = parseInt(pb.chrom.replace(/\D/g, ''))

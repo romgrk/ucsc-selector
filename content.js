@@ -1,11 +1,10 @@
 /*
  * content.js
  */
-/* global dragSelect */
+/* global dragSelect, $ */
 
 console.log('UCSC Selector loaded')
-
-
+console.log(chrome)
 
 const port = chrome.runtime.connect({ name: 'content' })
 
@@ -22,39 +21,10 @@ port.onMessage.addListener((msg) => {
 window.addEventListener('message', (event) => {
   const { type, data } = event.data
 
-  if (type === 'region')
-    port.postMessage({ type, data })
+  port.postMessage({ type, data })
 })
 
-// const background = chrome.extension.getBackgroundPage()
-// background.testRequest()
 
-
-function startSelector() {
-  run(() => window.isSelectorPaused = false)
-}
-
-function pauseSelector() {
-  run(() => window.isSelectorPaused = true)
-}
-
-function setRegions(regions) {
-  run([regions], (regions) => {
-    dragSelect.hlColor = '#ffff9c'
-
-    regions.forEach((region, i) => {
-      dragSelect.highlightThisRegion(region, i !== 0) // 'chr1:549597-623032'
-    })
-
-    // We highglight a single position to clear the rest of them. Havent found an API
-    // to do that.
-    if (regions.length === 0) {
-      const current = window.parsePosition(window.getCurrentPosition())
-      const region = `${current.chrom}:${current.start}-${current.start + 1}`
-      dragSelect.highlightThisRegion(region, false)
-    }
-  })
-}
 
 
 
@@ -77,13 +47,52 @@ run(() => {
     return { chrom, start, end }
   }
 
+  function addStyle(style) {
+    const node = document.createElement('style')
+    node.innerHTML = style
+    document.head.appendChild(node)
+  }
+
   window.closePopup = closePopup
   window.getCurrentPosition = getCurrentPosition
   window.parsePosition = parsePosition
+  window.addStyle = addStyle
+
+  /* Setup style */
+
+  addStyle(`
+    #imgTbl tr td:nth-child(2) {
+      cursor: pointer;
+    }
+    #imgTbl tr td:nth-child(2):hover {
+      background-color: rgba(6, 195, 255, 0.3);
+    }
+
+    [ucsc-selected] {
+      background-color: rgba(6, 195, 255, 0.3);
+    }
+  `)
+
+
+  /* Setup event listeners */
+
+  const UCSC = window.UCSC = {
+    selectedTrack: undefined,
+    lastPosition: '',
+  }
+
+
+  $('#imgTbl tr td:nth-child(2)').click(ev => {
+    if (window.isSelectorPaused === true)
+      return
+
+    $('[ucsc-selected]').removeAttr('ucsc-selected')
+    $(ev.currentTarget.parentNode).attr('ucsc-selected', true)
+    UCSC.selectedTrack = $(ev.currentTarget).attr('title').replace(/ *\n.*/, '')
+    window.redrawRegions()
+  })
 
   /* Region capturing script */
-
-  let lastRegion = ''
 
   setInterval(() => {
     if (window.isSelectorPaused === true)
@@ -94,20 +103,53 @@ run(() => {
     if (dragSelectPosition === null)
       return
 
-    const region = dragSelectPosition.textContent
+    const position = dragSelectPosition.textContent
 
-    if (region !== lastRegion) {
-      lastRegion = region
+    if (position !== UCSC.lastPosition) {
+      UCSC.lastPosition = position
 
-      window.postMessage({ type: 'region', data: region }, '*')
+      if (UCSC.selectedTrack === undefined) {
+        alert('Please select a track first.')
+      } else {
+        window.postMessage({ type: 'region', data: { track: UCSC.selectedTrack, position } }, '*')
+      }
 
       dragSelect.hlColor = '#ffff9c'
-      dragSelect.highlightThisRegion(region, true) // 'chr1:549597-623032'
+      dragSelect.highlightThisRegion(position, true) // 'chr1:549597-623032'
 
       closePopup()
     }
   }, 75)
 })
+
+function startSelector() {
+  run(() => window.isSelectorPaused = false)
+}
+
+function pauseSelector() {
+  run(() => window.isSelectorPaused = true)
+}
+
+function setRegions(regions) {
+  run([regions], (regions) => {
+
+    window.redrawRegions = function redrawRegions() {
+      regions.forEach((r, i) => {
+        dragSelect.hlColor = r.track === window.UCSC.selectedTrack ? '#ffff9c' : '#ccc'
+        dragSelect.highlightThisRegion(r.position, i !== 0) // 'chr1:549597-623032'
+      })
+
+      // We highglight a single position to clear the rest of them. Havent found an API
+      // to do that.
+      if (regions.length === 0) {
+        const current = window.parsePosition(window.getCurrentPosition())
+        const region = `${current.chrom}:${current.start}-${current.start + 1}`
+        dragSelect.highlightThisRegion(region, false)
+      }
+    }
+    window.redrawRegions()
+  })
+}
 
 
 
@@ -120,12 +162,6 @@ function run(args, fn) {
   }
 
   return inject(scriptFromSource(`(${fn})(${args.map(JSON.stringify).join(', ')})`))
-}
-
-function scriptFromFile(file) {
-  const script = document.createElement('script')
-  script.src = chrome.extension.getURL(file)
-  return script
 }
 
 function scriptFromSource(source) {

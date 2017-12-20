@@ -17,6 +17,7 @@ chrome.runtime.onConnect.addListener((port) => {
   console.assert(port.name == 'content')
 
   ports.push(port)
+  updateIcon()
 
   port.onMessage.addListener((msg) => {
     addRegion(msg.data)
@@ -29,9 +30,17 @@ chrome.runtime.onConnect.addListener((port) => {
   port.postMessage({ type: 'regions', data: state.regions })
 })
 function postMessage(message) {
-  ports.forEach(port =>
-    port.postMessage(message)
+  ports.forEach(p =>
+    p.postMessage(message)
   )
+}
+function updateIcon() {
+  ports.forEach(p => {
+    chrome.browserAction.setIcon({
+      path: { '32': state.status === 'start' ? './logo-green.png' : './logo.png' },
+      tabId: p.sender.tab.id,
+    })
+  })
 }
 
 function setState(patch) {
@@ -58,6 +67,7 @@ function setStatus(status) {
 
   setState({ status })
   postMessage({ type: 'status', data: state.status })
+  updateIcon()
 }
 function toggleStatus(status) {
   setStatus(state.status === 'start' ? 'pause' : 'start')
@@ -71,7 +81,7 @@ function addRegion(region) {
   postMessage({ type: 'regions', data: state.regions })
 }
 function deleteRegion(region) {
-  setState({ regions: state.regions.filter(r => r !== region) })
+  setState({ regions: state.regions.filter(r => r.position !== region.position || r.track !== region.track) })
   postMessage({ type: 'regions', data: state.regions })
 }
 function clearRegions() {
