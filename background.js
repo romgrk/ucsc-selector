@@ -25,7 +25,14 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onDisconnect.addListener(() => {
     ports = ports.filter(p => p !== port)
   })
+
+  port.postMessage({ type: 'regions', data: state.regions })
 })
+function postMessage(message) {
+  ports.forEach(port =>
+    port.postMessage(message)
+  )
+}
 
 function setState(patch) {
   state = { ...state, ...patch }
@@ -50,10 +57,7 @@ function setStatus(status) {
     return
 
   setState({ status })
-
-  ports.forEach(port =>
-    port.postMessage({ type: state.status })
-  )
+  postMessage({ type: 'status', data: state.status })
 }
 function toggleStatus(status) {
   setStatus(state.status === 'start' ? 'pause' : 'start')
@@ -64,10 +68,13 @@ function getRegions() {
 }
 function addRegion(region) {
   setState({ regions: [...state.regions, region] })
+  postMessage({ type: 'regions', data: state.regions })
 }
 function deleteRegion(region) {
   setState({ regions: state.regions.filter(r => r !== region) })
+  postMessage({ type: 'regions', data: state.regions })
 }
 function clearRegions() {
   setState({ regions: [] })
+  postMessage({ type: 'regions', data: state.regions })
 }

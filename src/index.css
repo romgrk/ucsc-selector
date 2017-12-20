@@ -3,3 +3,28 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+button {
+  user-select: none;
+  border: 2px solid black;
+  border-radius: 4px;
+  background-color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #ddd;
+}
+button.inverse {
+  color: white;
+  border-color: white;
+  background-color: black;
+}
+button.inverse:hover {
+  background-color: #555;
+}
+
+button.danger {
+  color: white;
+  background-color: #ff4c4c;
+}
