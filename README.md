@@ -30,3 +30,10 @@ nodemon -w src --exec 'npm run build'
 
 (will rebuild everytime the front-end changes. Requires nodemon, installable
 through `npm i -g nodemon`)
+
+
+### Other
+
+Chrome might complaing about the extension containing `.pem` files, but those
+are really just test files contained in node_modules. Remove that warning by
+running `find -name '*.pem' | xargs -I {} rm {}`.
