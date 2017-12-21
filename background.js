@@ -2,7 +2,7 @@
  * background.js
  */
 
-const MODES = ['peak', 'start', 'end']
+const MODES = ['peak', 'start', 'end', 'no_peak']
 
 let ports = []
 
@@ -123,8 +123,9 @@ function getModes() {
 }
 function getModeColor(mode) {
   return {
-    peak:  '#ffff9e',
-    start: '#69b5ff',
-    end:   '#ff9e99',
+    no_peak: '#f6f4bf',
+    start:   '#ffafaf',
+    end:     '#ff4c4c',
+    peak:    '#a445ee',
   }[mode]
 }
