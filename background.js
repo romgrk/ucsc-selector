@@ -25,6 +25,7 @@ chrome.runtime.onConnect.addListener((port) => {
   port.onMessage.addListener((msg) => {
     switch(msg.type) {
       case 'region': return addRegion(msg.data)
+      case 'mode': return setMode(msg.data)
       case 'state': return port.postMessage(state)
     }
   })
